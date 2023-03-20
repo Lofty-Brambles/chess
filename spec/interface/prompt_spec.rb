@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require_relative '../../lib/interface/prompter'
+require_relative '../../lib/interface/prompt'
 require 'stringio'
 
-describe Prompt do
+RSpec.describe Prompt do
   let(:question) { 'Enter a number between 1 and 6' }
   let(:invalid) { "Invalid, #{question}" }
 
