@@ -5,3 +5,9 @@ class ExitError < StandardError
     'This error is thrown to indicate that the user wants to exit the game loop.'
   end
 end
+
+class InvalidFENError < StandardError
+  def message(text)
+    text
+  end
+end
