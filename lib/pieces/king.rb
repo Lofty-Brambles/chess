@@ -21,14 +21,17 @@ class King < Base
     super
   end
 
-  def moves(filter_checks = true)
+  def moves(filter_the_checks = true)
     all = INCREMENTS.map { |key| [key[0] + @position[0], key[1] + @position[1]] }
     filtered_invalids = filter_scopeless_moves(all)
-    filter_checks ? filter_checks(filtered_invalids) : filtered_invalid
+    filter_the_checks ? filter_checks(filtered_invalids) : filtered_invalid
   end
 
-  def position_in_check(turn, position = @position)
-    opponents = @@pieces.filter { |piece| piece.type != turn }
+  # TODO: remove all moves where a protected piece exists and checked positions
+  def filter_checks(array); end
 
+  def position_in_check?(turn, position = @position)
+    opponents = @@pieces.filter { |piece| piece.type != turn }
+    opponents.flat_map { |piece| piece.moves }.uniq.includes?(position)
   end
 end

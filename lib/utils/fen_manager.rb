@@ -1,15 +1,18 @@
 # frozen_string_literal: true
 
 require_relative '../errors'
+require_relative '../pieces/king'
+require_relative '../pieces/pawn'
 
 module FenManager
   def process_fen(text)
     meta_data = text.split
+    raise InvalidFENError.new('Missing FEN arguments.') if meta_data.length != 6
 
     turn = meta_data[1] == 'w' ? :white : :black
     board = validate(meta_data[0], turn)
     castle_rights = meta_data[2]
-    en_passant = meta_data[3]
+    en_passant = validate_en_passant(meta_data[3], board, turn)
     fifty_turns_tally = meta_data[4].to_i
 
     [board, turn, castle_rights, en_passant, fifty_turns_tally]
@@ -19,6 +22,7 @@ module FenManager
     pre = pre_validate(string)
     post = parse_board(pre)
     post_validate(post, turn)
+    post
   end
 
   def pre_validate(string)
@@ -29,8 +33,10 @@ module FenManager
     string
   end
 
-  def post_validate(string, turn)
-
+  def post_validate(pieces, turn)
+    inactive_king = pieces.find { |piece| piece.instance_of?(King) && piece.type != turn }
+    inactive_king_in_check = InvalidFENError.new('The board has inactive king in check')
+    raise inactive_king_in_check if inactive_king.position_in_check?
   end
 
   def parse_board(string)
@@ -41,6 +47,29 @@ module FenManager
     pieces = {}
     board.each_with_index { | rank_text, rank | tally_rank(pieces, rank_text, rank) }
     pieces
+  end
+
+  def validate_en_passant(square, pieces, turn)
+    passes_match = square.match?(/^[a-h][36]$/)
+    position = square_to_array(square)
+
+    position[0] = position[0] == 3 ? position[0] + 1 : position[0] - 1
+    exists_same = pieces.find(proc { nil }) do |piece|
+      piece.instance_of?(Pawn) && piece.type != type && piece.position == position
+    end
+
+    position_for_active = [position[1] + 1, position[1] - 1]
+      .map { |col| [position[0], col] }
+      .filter { |array| array[0].between?(0, 7) }
+  
+    exists_diff = pieces.find(proc { nil }) do |piece|
+      is_opponent_pawn = piece.instance_of?(Pawn) && piece.type == type
+      is_opponent_pawn && position_for_active.include?(piece.position)
+    end
+
+    unless passes_match && [exists_same, exists_diff].none? { |element| element.nil? }
+      raise InvalidFENError.new('This en-passant is not valid.')
+    end
   end
 
   def tally_rank(pieces, rank_text, rank)
