@@ -1,8 +1,15 @@
-def f 
-  return <<~HEREDOCS
-    dsfsd
-    sdsd
-  HEREDOCS
+class D
+  attr_accessor :j
+
+  def initialize(kind)
+    @j = kind
+  end
 end
 
-p f
+class Df < D
+  def initialize(king)
+    super(king)
+  end
+end
+
+p Df.new('s').j
